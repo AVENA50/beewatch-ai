@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "beewatch"
+version = "0.1.0"
+description = "AI-powered beehive monitoring system built with Python and Streamlit"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+dependencies = [
+    "streamlit>=1.40",
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "scikit-learn>=1.5",
+    "joblib>=1.4",
+    "mysql-connector-python>=9.0",
+    "python-dotenv>=1.0",
+    "requests>=2.32",
+    "plotly>=5.24",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+]
+
+# Il package applicativo e' beewatch/. La cartella app/ contiene solo
+# l'interfaccia Streamlit e non va distribuita come package.
+[tool.setuptools.packages.find]
+include = ["beewatch*"]
+
+# --------------------------------------------------------------------------- #
+# Ruff: linter e formatter
+# --------------------------------------------------------------------------- #
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+# E/W = pycodestyle, F = pyflakes, I = isort, UP = pyupgrade, B = bugbear
+select = ["E", "W", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# Negli __init__.py gli import non usati sono spesso ri-esportazioni volute.
+"__init__.py" = ["F401"]
+
+# --------------------------------------------------------------------------- #
+# Pytest
+# --------------------------------------------------------------------------- #
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = [
+    "integration: richiede servizi esterni (MySQL, rete, API LLM)",
+    "slow: test volutamente lento, escluso dal ciclo rapido",
+]
+
+[tool.coverage.run]
+source = ["beewatch"]
+omit = ["*/__init__.py"]

@@ -216,3 +216,37 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --------------------------------------------------------------------------- #
+# BeeWatch AI
+# --------------------------------------------------------------------------- #
+
+# Dataset USDA: scaricato localmente, mai committato.
+# ATTENZIONE: si ignora il CONTENUTO (data/*), non la cartella (data/).
+# Git non permette di ri-includere un file se la sua cartella e' esclusa:
+# con "data/" la riga "!data/.gitkeep" non avrebbe alcun effetto e chi clona
+# non troverebbe la cartella (vedi struttura, regola 6).
+data/*
+!data/.gitkeep
+
+# I modelli addestrati SONO committati (il docente deve poter clonare e
+# avviare l'app senza riaddestrare), quindi models/ non va ignorata.
+
+# Artefatti di packaging (pip install -e .)
+*.egg-info/
+build/
+dist/
+
+# Log applicativi
+logs/
+*.log
+
+# Report dell'ETL
+reports/
+
+# Editor
+.vscode/
+.idea/
+
+# Ruff
+.ruff_cache/

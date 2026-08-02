@@ -1,0 +1,73 @@
+name: Task del backlog
+description: Apre una task pianificata nel backlog di BeeWatch AI
+title: "M? - T? "
+labels: ["core"]
+body:
+  - type: input
+    id: codice
+    attributes:
+      label: Codice della task
+      description: Come appare nel backlog
+      placeholder: M3 - T3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: Milestone
+      options:
+        - M1 - Fondamenta e setup
+        - M2 - Dati e database
+        - M3 - Accesso ai dati ed ETL
+        - M4 - Machine Learning
+        - M5 - Componente AI generativa
+        - M6 - Interfaccia Streamlit
+        - M7 - Qualita, Docker, etica
+        - M8 - Documentazione, demo, consegna
+        - MX - Estensioni opzionali
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priorita
+    attributes:
+      label: Priorita
+      options:
+        - P0 - blocca la consegna
+        - P1 - importante
+        - P3 - opzionale
+    validations:
+      required: true
+
+  - type: textarea
+    id: descrizione
+    attributes:
+      label: Descrizione
+      description: Cosa va realizzato
+    validations:
+      required: true
+
+  - type: textarea
+    id: obiettivo
+    attributes:
+      label: Obiettivo
+      description: Perche' questa task esiste, quale requisito soddisfa
+
+  - type: textarea
+    id: dod
+    attributes:
+      label: Definition of Done
+      description: Una casella per criterio. La issue si chiude solo con TUTTE spuntate.
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: input
+    id: dipendenze
+    attributes:
+      label: Dipendenze
+      placeholder: M3-T2

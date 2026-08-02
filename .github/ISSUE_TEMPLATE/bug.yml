@@ -1,0 +1,38 @@
+name: Bug
+description: Segnala un comportamento non corretto
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: descrizione
+    attributes:
+      label: Cosa succede
+    validations:
+      required: true
+
+  - type: textarea
+    id: riproduzione
+    attributes:
+      label: Come riprodurlo
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: atteso
+    attributes:
+      label: Cosa dovrebbe succedere invece
+    validations:
+      required: true
+
+  - type: textarea
+    id: ambiente
+    attributes:
+      label: Ambiente
+      value: |
+        - Sistema operativo:
+        - Versione Python:
+        - Avvio: locale / Docker
