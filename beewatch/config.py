@@ -18,9 +18,8 @@ Uso tipico:
 La configurazione viene letta una sola volta e messa in cache: `ottieni()` si
 può chiamare da qualsiasi modulo senza costi.
 
-NOTA (M1-T3): `ConfigError` è definita qui in via temporanea. In M1-T4, quando
-nascerà `beewatch/exceptions.py`, diventerà figlia di `BeeWatchError` e verrà
-spostata lì. Il resto del modulo non cambierà.
+Gli errori di configurazione sono segnalati con `ConfigError`, che vive in
+`beewatch/exceptions.py` insieme al resto della gerarchia (M1-T4).
 """
 
 from __future__ import annotations
@@ -32,20 +31,13 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from beewatch.exceptions import ConfigError
+
 # Radice del progetto: due livelli sopra questo file (beewatch/config.py).
 RADICE = Path(__file__).resolve().parent.parent
 
 PROVIDER_AMMESSI = ("ollama", "openrouter")
 LIVELLI_LOG = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
-
-
-class ConfigError(RuntimeError):
-    """Configurazione mancante o non valida.
-
-    Viene sollevata una sola volta, con l'elenco completo dei problemi: così
-    chi installa il progetto li corregge tutti in un passaggio invece di
-    scoprirli uno alla volta.
-    """
 
 
 # --------------------------------------------------------------------------- #
