@@ -27,7 +27,9 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+import zipfile
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 from docx import Document
@@ -65,6 +67,13 @@ FONT_TESTO = "Calibri"
 FONT_CODICE = "Consolas"
 
 OCCHIELLO = "BEEWATCH AI  ·  PROGETTO 7"
+
+# Data fissa scritta nelle proprieta' del documento. Serve a rendere la
+# generazione deterministica: con la data corrente, ogni esecuzione produrrebbe
+# byte diversi anche a contenuto identico, e git segnalerebbe come modificati
+# tutti i .docx a ogni rigenerazione.
+DATA_FISSA = datetime(2026, 1, 1)  # noqa: DTZ001 - proprieta' del documento, non un istante
+DATA_ZIP = (2026, 1, 1, 0, 0, 0)
 
 # Nome esteso delle milestone, ricavato dalla cartella che contiene il file.
 MILESTONE = {
@@ -209,6 +218,12 @@ class Intestazione:
 
 def prepara_documento() -> Document:
     documento = Document()
+
+    proprieta = documento.core_properties
+    proprieta.author = "BeeWatch AI"
+    proprieta.last_modified_by = "scripts/genera_docx.py"
+    proprieta.created = proprieta.modified = DATA_FISSA
+    proprieta.revision = 1
 
     sezione = documento.sections[0]
     sezione.page_width, sezione.page_height = Cm(21.59), Cm(27.94)
@@ -429,7 +444,8 @@ def converti(percorso_md: Path, percorso_docx: Path) -> None:
             paragrafo.paragraph_format.left_indent = Cm(0.5)
             paragrafo.paragraph_format.space_after = Pt(10)
             _bordo(paragrafo, "left", "A87200", spessore=12)
-            scrivi_testo(paragrafo, "  ".join(citazione), dimensione=10, colore=GRIGIO)
+            testo_citazione = " ".join(r for r in citazione if r)
+            scrivi_testo(paragrafo, testo_citazione, dimensione=10, colore=GRIGIO)
             continue
 
         elenco = re.match(r"[-*]\s+(.*)", nuda)
@@ -456,6 +472,29 @@ def converti(percorso_md: Path, percorso_docx: Path) -> None:
     chiudi_paragrafo()
     percorso_docx.parent.mkdir(parents=True, exist_ok=True)
     documento.save(percorso_docx)
+    _normalizza_archivio(percorso_docx)
+
+
+def _normalizza_archivio(percorso: Path) -> None:
+    """Riscrive il .docx con date e ordine fissi dentro l'archivio.
+
+    Un file .docx e' uno zip, e zipfile ci scrive dentro l'ora di creazione di
+    ogni voce. Senza questo passaggio due esecuzioni a contenuto identico
+    produrrebbero byte diversi, e git segnalerebbe come modificati tutti i
+    documenti a ogni rigenerazione.
+    """
+    with zipfile.ZipFile(percorso) as archivio:
+        contenuti = {voce.filename: archivio.read(voce.filename) for voce in archivio.infolist()}
+
+    # `[Content_Types].xml` resta in testa come vuole il formato OPC.
+    ordine = sorted(contenuti, key=lambda n: (n != "[Content_Types].xml", n))
+
+    with zipfile.ZipFile(percorso, "w", zipfile.ZIP_DEFLATED) as archivio:
+        for nome in ordine:
+            informazioni = zipfile.ZipInfo(nome, date_time=DATA_ZIP)
+            informazioni.compress_type = zipfile.ZIP_DEFLATED
+            informazioni.external_attr = 0o600 << 16
+            archivio.writestr(informazioni, contenuti[nome])
 
 
 # --------------------------------------------------------------------------- #

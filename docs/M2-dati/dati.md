@@ -1,10 +1,24 @@
 # I dati di BeeWatch AI
 
-> **Task M2-T1** · analisi esplorativa → sezioni *Fonte*, *Struttura*, *Osservazioni*, *Anomalie*
-> **Task M2-T2** · dizionario e pulizia → sezioni *Dizionario delle colonne*, *Regole di pulizia*, *Conversioni di unità*
+> **Task M2-T1** · analisi esplorativa → *Fonte*, *Struttura*, *Osservazioni*, *Anomalie*
+> **Task M2-T2** · dizionario e pulizia → *Dizionario delle colonne*, *Regole di pulizia*, *Conversioni di unità*
+> **Task M2-T3** · target e limiti → *Il target*, *Modelli di riferimento*, *Limiti di trasferibilità*, *Cosa vedrà l'utente*
 > **Procedimento completo:** `notebooks/01_eda.ipynb` (eseguibile dall'inizio alla fine)
 > **File analizzato:** `data/honeyproduction.csv` — 32 KB, ignorato da git
-> **Stato:** manca la scelta motivata del target, che arriva con M2-T3.
+
+## Indice
+
+1. [Fonte](#fonte) — da dove vengono i dati
+2. [Struttura in breve](#struttura-in-breve) — dimensioni e completezza
+3. [Dizionario delle colonne](#dizionario-delle-colonne) — significato, tipi, range
+4. [Osservazioni](#osservazioni) — cosa dicono i dati, in nove punti
+5. [Anomalie e valori sospetti](#anomalie-e-valori-sospetti) — cosa non torna
+6. [Regole di pulizia](#regole-di-pulizia) — dodici decisioni motivate
+7. [Conversioni di unità](#conversioni-di-unità-e-verifica-manuale) — libbre, chili, dollari
+8. [Il target della regressione](#il-target-della-regressione) — cosa prevediamo
+9. [Modelli di riferimento](#modelli-di-riferimento) — la soglia da battere
+10. [Limiti di trasferibilità](#limiti-di-trasferibilità) — perché non è il tuo alveare
+11. [Cosa vedrà l'utente](#cosa-vedrà-lutente) — come si comunica una stima incerta
 
 ## Fonte
 
@@ -459,6 +473,213 @@ sono i valori attesi.
 
 ---
 
+## Il target della regressione
+
+**Il modello prevede `resa_per_colonia_kg`: quanto miele produce in media una
+singola colonia in una stagione.**
+
+Il dataset offre sei grandezze numeriche. Quattro si escludono da sole:
+
+`totalprod` e `prodvalue` sono **calcolate** dalle altre (osservazione 2).
+Prevederle significherebbe chiedere al modello di eseguire una moltiplicazione
+di cui gli abbiamo già dato i fattori: R² prossimo a 1 e nessuna conoscenza
+acquisita. È data leakage, e sarebbe la prima cosa che un esaminatore nota.
+
+`numcol` è il numero di colonie: lo decide l'apicoltore, non le api. Non è una
+previsione, è un dato di ingresso.
+
+`stocks` sono le scorte invendute e `priceperlb` è il prezzo di mercato:
+dipendono da domanda, commercializzazione e politiche agricole, non dalla
+produttività dell'alveare. Prevederli richiederebbe dati economici che non
+abbiamo, e non risponderebbero alla domanda dell'utente.
+
+Resta `yieldpercol`, ed è anche la scelta giusta nel merito, non solo per
+esclusione:
+
+- **È l'unica grandezza biologica.** Dipende da clima, fioriture, salute della
+  colonia e gestione dell'apiario: esattamente i fattori su cui l'utente può
+  intervenire.
+- **È indipendente dalla scala.** Un apiario di tre alveari e uno stato con
+  500 000 colonie hanno rese confrontabili. `totalprod` no: dipende da quanto è
+  grande chi produce, quindi non sarebbe trasferibile a un amatore.
+- **Ha la distribuzione migliore.** È l'unica variabile ragionevolmente
+  simmetrica e con la percentuale più bassa di outlier, 1,9 % (osservazione 7).
+  Le altre sono asimmetriche a destra perché seguono la dimensione dello stato.
+- **È la domanda che l'utente si pone davvero**: *«quanto miele mi darà questo
+  alveare?»*, non *«quanto miele produrrà il Nord Dakota?»*.
+
+### Il target in cifre
+
+| | Valore |
+|---|---|
+| Media | 28,13 kg per colonia |
+| Mediana | 27,22 kg |
+| Deviazione standard | 8,83 kg |
+| Scarto interquartile | 11,79 kg |
+| Minimo – massimo | 8,62 – 61,69 kg |
+| Intervallo che contiene l'80 % dei casi | 18,1 – 40,4 kg |
+
+Quest'ultima riga è la più importante di tutta la sezione: **la resa varia da 18
+a 40 kg anche restando nell'80 % centrale dei casi**. Qualunque previsione che
+si presenti come un numero singolo sta nascondendo questa dispersione.
+
+---
+
+## Modelli di riferimento
+
+Prima di costruire un modello bisogna sapere quanto è difficile il problema.
+Due modelli banali danno la misura, e la soglia che M4 dovrà superare per
+giustificare la propria esistenza.
+
+### Sull'intero dataset
+
+| Modello di riferimento | MAE | RMSE | R² |
+|---|---|---|---|
+| Predice sempre la media globale | 6,98 kg | 8,82 | 0,000 |
+| Predice la media del suo stato | **4,15 kg** | 5,35 | 0,631 |
+
+Conoscere soltanto lo stato riduce l'errore del **41 %**. Non sorprende: la
+varianza fra stati è il 64 % della varianza totale (osservazione 8, Hawaii 98 lb
+contro Maine 31 lb). **La geografia è di gran lunga il fattore più importante**,
+e un modello che non la usa parte perdente.
+
+> **Una trappola da evitare.** Un terzo "modello" che predice la media del gruppo
+> (stato, anno) ottiene MAE 0,00 e R² 1,000. Non è un modello: (`stato`, `anno`)
+> è la chiave primaria del dataset, quindi ogni gruppo contiene una riga sola e
+> la "media" è il valore stesso. È la stessa forma di errore dell'osservazione 2,
+> travestita da aggregazione. Se in M4 un modello restituisce R² sospettosamente
+> vicino a 1, la prima cosa da cercare è questa.
+
+### Su dati mai visti
+
+Il confronto onesto si fa addestrando sul passato e verificando sul futuro,
+perché i dati hanno una tendenza temporale. Addestramento 1998–2009 (506 righe),
+verifica 2010–2012 (120 righe):
+
+| Modello di riferimento | MAE | RMSE | R² | 80 % degli errori entro |
+|---|---|---|---|---|
+| Media globale del periodo di addestramento | 6,46 kg | 8,19 | −0,257 | ± 11,1 kg |
+| Media dello stato | 5,73 kg | 6,80 | 0,134 | ± 8,8 kg |
+| Media dello stato + tendenza annuale | **4,25 kg** | 5,46 | 0,442 | **± 6,1 kg** |
+
+Due cose vanno notate.
+
+**L'R² negativo della prima riga** significa che predire la media del passato è
+*peggio* che predire la media del futuro: la resa è calata, quindi il passato
+sistematicamente sovrastima. È la conferma numerica dell'osservazione 3.
+
+**La tendenza annuale vale più dello stato**, su dati futuri: aggiungerla porta
+il MAE da 5,73 a 4,25 kg. La pendenza stimata sul solo periodo di addestramento
+è **−0,468 kg all'anno**, coerente con i −0,537 kg/anno misurati sull'intero
+pannello bilanciato.
+
+### La soglia per M4
+
+> Un modello di machine learning che non scende **sotto 4,25 kg di MAE** su una
+> divisione temporale non serve a niente: due medie e una retta fanno lo stesso.
+
+Questo numero va in `docs/M4-machine-learning/` come criterio di accettazione, e
+va detto in sede di presentazione. Un progetto che dichiara la propria soglia di
+riferimento è molto più credibile di uno che mostra un R² senza contesto.
+
+---
+
+## Limiti di trasferibilità
+
+I dati descrivono **apicoltura commerciale statunitense, aggregata per stato,
+dal 1998 al 2012**. L'utente è un **apicoltore amatoriale italiano nel 2026**.
+Fra le due cose ci sono cinque distanze, tutte reali.
+
+**1. Aggregazione.** Una riga è la media di uno stato intero: migliaia di
+apiari, gestiti in modi diversi, in climi diversi. La media di uno stato non
+descrive nessun apiario in particolare, esattamente come il reddito medio di una
+regione non descrive nessuna famiglia.
+
+**2. Scala e gestione.** L'apicoltura commerciale americana pratica il
+nomadismo — gli alveari vengono spostati sulle fioriture e affittati per
+l'impollinazione — usa selezione genetica, alimentazione di sostegno e
+trattamenti programmati. Un amatore con tre arnie fisse in giardino lavora in
+condizioni diverse.
+
+**3. Geografia.** Nessuno stato del dataset ha il clima italiano. Le rese vanno
+da 31 lb del Maine a 98 lb delle Hawaii: il modello impara differenze fra climi
+statunitensi, e l'Italia non è nella mappa.
+
+**4. Epoca.** I dati si fermano al 2012. Da allora sono cambiati il clima, la
+diffusione della varroa e le pratiche di gestione. Il modello estrapola di
+quattordici anni, e la tendenza che ha imparato (−0,47 kg/anno) non è detto sia
+proseguita in modo lineare.
+
+**5. Variabili assenti.** Il dataset non contiene nulla di ciò che l'apicoltore
+osserva davvero: forza della famiglia, presenza della regina, carico di varroa,
+fioriture disponibili, andamento meteorologico della stagione. Il modello lavora
+con `stato` e `anno`, cioè con proxy grossolane.
+
+### Cosa possiamo e non possiamo dire
+
+| Possiamo dire | Non possiamo dire |
+|---|---|
+| «In condizioni paragonabili a quelle rilevate negli Stati Uniti, una colonia produce fra i 18 e i 40 kg» | «Il tuo alveare produrrà 27,4 kg» |
+| «La resa media è calata di circa mezzo chilo all'anno fra il 1998 e il 2012» | «La tua resa calerà dello 0,5 kg l'anno prossimo» |
+| «La posizione geografica spiega circa due terzi delle differenze di resa» | «Spostando l'apiario guadagni X kg» |
+| «Questa è una stima statistica di riferimento, non una previsione sul tuo apiario» | «Il modello ha un'accuratezza del 90 %» |
+
+Il modello **non è uno strumento diagnostico e non sostituisce un veterinario o
+un tecnico apistico**. Questa frase deve comparire nell'applicazione, non solo
+qui: è uno dei cinque punti etici obbligatori (M6-T8, M7-T4).
+
+---
+
+## Cosa vedrà l'utente
+
+La decisione di M2-T3 non finisce nel modello: finisce a schermo. Un limite
+scritto in un documento che nessuno legge non è una mitigazione.
+
+### La previsione non è mai un numero solo
+
+```
+        Stima di riferimento
+
+        22 — 34 kg per colonia
+
+        valore centrale 28 kg
+```
+
+L'intervallo si costruisce sui **residui del modello** misurati in M4, non su un
+numero deciso a tavolino. Con i modelli di riferimento attuali sarebbe di circa
+± 6 kg (l'80 % degli errori sta lì dentro); il modello di M4 dovrà restringerlo,
+e la UI userà l'intervallo che quel modello dichiara.
+
+**Se un giorno l'intervallo risultasse più largo della stima stessa, la stima non
+va mostrata**: si mostra il messaggio che i dati disponibili non permettono una
+previsione utile. Un intervallo `5 – 55 kg` non informa nessuno, e mostrarlo
+sarebbe peggio che tacere.
+
+### Tre elementi sempre presenti
+
+1. **L'intervallo**, in evidenza, più grande del valore centrale.
+2. **La riga di provenienza**, sotto la stima:
+   *«Stima basata su dati USDA 1998-2012, apicoltura commerciale statunitense.
+   Il tuo apiario può discostarsene sensibilmente.»*
+3. **Il collegamento alla pagina Trasparenza**, che spiega per esteso i cinque
+   limiti qui sopra.
+
+### Quattro cose che non faremo
+
+- **Nessun numero secco.** Mai «produrrai 27,4 kg».
+- **Nessuna percentuale di accuratezza.** «Accurato al 90 %» non significa nulla
+  in una regressione e induce una fiducia che il modello non merita.
+- **Nessun consiglio operativo derivato dalla previsione.** Il modello non sa
+  niente del singolo alveare: non può dire quando smielare o se nutrire.
+- **Nessun arrotondamento sotto il chilo.** I dati di partenza sono arrotondati
+  al migliaio di libbre (vedi *Dizionario · precisione*): tre decimali sarebbero
+  una precisione inventata.
+
+Queste quattro righe diventano requisiti di **M6-T5** (pagina Previsioni) e
+**M6-T8** (pagina Trasparenza).
+
+---
+
 ## Cosa comporta per il resto del progetto
 
 | Osservazione | Ricade su |
@@ -474,12 +695,12 @@ sono i valori attesi.
 
 ## Cosa non è stato deciso qui
 
-Deliberatamente fuori dallo scopo di M2-T1 e M2-T2:
+Deliberatamente fuori dallo scopo di M2:
 
-- la **scelta formale del target** della regressione e i limiti di
-  trasferibilità al caso italiano → **M2-T3**;
 - quali variabili entrano nel modello e come vengono codificate → **M4-T2**;
-- come le tre tabelle si legano fra loro → **M2-T4**.
+- quale algoritmo si usa e come si valida → **M4-T3**, **M4-T5**;
+- come si costruisce tecnicamente l'intervallo di previsione → **M4-T6**;
+- come le tabelle si legano fra loro nello schema → **M2-T4**.
 
 ## Registro delle decisioni
 
@@ -497,3 +718,7 @@ Deliberatamente fuori dallo scopo di M2-T1 e M2-T2:
 | R10 | Stati con copertura parziale conservati | Il dato è valido, è il confronto a non esserlo |
 | R11 | Scorte > produzione: warning, non correzione | Plausibile, correggerla sarebbe inventare |
 | R12 | Quantità lette come interi | Tipi corretti fin dalla lettura |
+| T1 | Target: `resa_per_colonia_kg` | Unica grandezza biologica e indipendente dalla scala |
+| T2 | Soglia di accettazione per M4: MAE < 4,25 kg | Sotto quel valore bastano due medie e una retta |
+| T3 | La previsione si mostra come intervallo, mai come numero | L'80 % dei casi reali sta fra 18 e 40 kg |
+| T4 | Nessuna percentuale di accuratezza in interfaccia | Non significa nulla in una regressione |
