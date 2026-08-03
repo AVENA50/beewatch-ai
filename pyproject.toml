@@ -27,6 +27,12 @@ dev = [
     "pytest>=8.3",
     "pytest-cov>=5.0",
     "ruff>=0.6",
+    # Analisi esplorativa (M2-T1): jupyterlab esegue i notebook, ipykernel e' il
+    # kernel Python che usano, matplotlib disegna i grafici statici dell'EDA.
+    # Plotly resta riservato all'interfaccia Streamlit.
+    "jupyterlab>=4.2",
+    "ipykernel>=6.29",
+    "matplotlib>=3.9",
 ]
 
 # Il package applicativo e' beewatch/. La cartella app/ contiene solo
