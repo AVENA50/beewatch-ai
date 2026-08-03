@@ -55,10 +55,27 @@ COPIE_STORICHE = 3
 # senza questo, i messaggi dell'applicazione si perdono nel rumore.
 LIBRERIE_SILENZIATE = ("urllib3", "httpx", "httpcore", "matplotlib", "PIL")
 
+# Marcatore applicato ai nostri handler. Serve a riconoscerli fra quelli che
+# altri strumenti (pytest, Streamlit) possono aggiungere allo stesso logger:
+# la guardia di idempotenza deve rispondere a «ho già configurato *io*?», non
+# a «esiste un handler qualsiasi?».
+_MARCATORE = "_beewatch"
+
 
 # --------------------------------------------------------------------------- #
 # Configurazione
 # --------------------------------------------------------------------------- #
+
+
+def _marca(handler: logging.Handler) -> logging.Handler:
+    """Contrassegna un handler come nostro."""
+    setattr(handler, _MARCATORE, True)
+    return handler
+
+
+def _nostri_handler(logger: logging.Logger) -> list[logging.Handler]:
+    """Gli handler installati da questo modulo, ignorando quelli altrui."""
+    return [h for h in logger.handlers if getattr(h, _MARCATORE, False)]
 
 
 def configura(livello: str | None = None, *, su_file: bool = True) -> logging.Logger:
@@ -78,9 +95,9 @@ def configura(livello: str | None = None, *, su_file: bool = True) -> logging.Lo
     """
     radice = logging.getLogger(NOME_LOGGER)
 
-    # Guardia di idempotenza: se ci sono già handler, la configurazione è
-    # stata fatta (vedi la nota su Streamlit in cima al modulo).
-    if radice.handlers:
+    # Guardia di idempotenza (vedi la nota su Streamlit in cima al modulo):
+    # si controllano solo gli handler che abbiamo installato noi.
+    if _nostri_handler(radice):
         return radice
 
     livello_effettivo = livello or ottieni().livello_log
@@ -95,6 +112,7 @@ def configura(livello: str | None = None, *, su_file: bool = True) -> logging.Lo
 
     console = logging.StreamHandler(sys.stdout)
     console.setFormatter(formattatore)
+    _marca(console)
     radice.addHandler(console)
 
     if su_file:
@@ -106,6 +124,7 @@ def configura(livello: str | None = None, *, su_file: bool = True) -> logging.Lo
             encoding="utf-8",
         )
         su_disco.setFormatter(formattatore)
+        _marca(su_disco)
         radice.addHandler(su_disco)
 
     for nome_libreria in LIBRERIE_SILENZIATE:
@@ -133,12 +152,13 @@ def ottieni_logger(nome: str) -> logging.Logger:
 
 
 def azzera() -> None:
-    """Rimuove gli handler del logger di pacchetto.
+    """Rimuove i nostri handler dal logger di pacchetto.
 
     Serve soltanto ai test, che devono poter riconfigurare il logging da capo
-    fra un caso e l'altro. Non va chiamata dall'applicazione.
+    fra un caso e l'altro. Non va chiamata dall'applicazione. Gli handler
+    installati da altri strumenti non vengono toccati.
     """
     radice = logging.getLogger(NOME_LOGGER)
-    for handler in list(radice.handlers):
+    for handler in _nostri_handler(radice):
         handler.close()
         radice.removeHandler(handler)
