@@ -159,7 +159,7 @@ milestone. L'indice è in [`docs/README.md`](docs/README.md).
 | Milestone | Contenuto | Stato |
 |---|---|---|
 | **M1** | Fondamenta e setup | ✅ completata |
-| **M2** | Dati e database | 🔵 in corso — T1-T5 completate |
+| **M2** | Dati e database | ✅ completata |
 | M3 | Accesso ai dati ed ETL | ⬜ |
 | M4 | Machine Learning | ⬜ |
 | M5 | Componente AI generativa | ⬜ |

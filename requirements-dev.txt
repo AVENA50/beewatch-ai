@@ -1,0 +1,23 @@
+# Strumenti per SVILUPPARE il progetto.
+#
+# Non entrano nell'immagine Docker: un'immagine di consegna che contiene pytest
+# e ruff dichiara di essere qualcosa che non e'.
+#
+#     pip install -r requirements.txt -r requirements-dev.txt
+#
+# In pratica conviene installare il pacchetto in modalita' modificabile, che
+# tira dentro entrambi i gruppi e rende `import beewatch` disponibile ovunque:
+#
+#     pip install -e ".[dev]"
+
+-r requirements.txt
+
+# --- test e qualita' ---
+pytest>=8.3
+pytest-cov>=5.0
+ruff>=0.6
+
+# --- analisi esplorativa (M2-T1) ---
+jupyterlab>=4.2
+ipykernel>=6.29
+matplotlib>=3.9

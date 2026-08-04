@@ -24,6 +24,7 @@ I codici sono gli stessi del backlog su GitHub e dei messaggi di commit.
 | M2-T3 | [Target e limiti](markdown/M2-dati/M2-T3_target_e_limiti.md) | cosa prevede il modello, e la soglia che deve battere |
 | M2-T4 | [Schema relazionale](markdown/M2-dati/M2-T4_schema.md) | quattordici tabelle, undici query, diagramma ER |
 | M2-T5 | [Schema SQL e Docker](markdown/M2-dati/M2-T5_schema_sql.md) | il DDL e il contenitore MySQL |
+| M2-T6 | [Seed e apiario demo](markdown/M2-dati/M2-T6_seed_demo.md) | valori fissi e dati dimostrativi |
 
 ### M6 · Interfaccia Streamlit
 
