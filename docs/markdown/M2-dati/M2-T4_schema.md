@@ -189,13 +189,31 @@ un'ispezione fatta la mattina.
 | Colonna | Tipo | Vincoli |
 |---|---|---|
 | `id` | INT UNSIGNED AUTO_INCREMENT | PK |
-| `alveare_id` | INT UNSIGNED | FK → `alveari.id`, ON DELETE CASCADE |
+| `apiario_id` | INT UNSIGNED | FK → `apiari.id`, ON DELETE CASCADE |
+| `alveare_id` | INT UNSIGNED NULL | FK → `alveari.id`, ON DELETE SET NULL |
 | `tipo_miele_id` | TINYINT UNSIGNED | FK → `tipi_miele.id`, ON DELETE RESTRICT |
 | `data_raccolto` | DATE | NOT NULL |
 | `quantita_kg` | DECIMAL(6,2) | NOT NULL, CHECK > 0 |
 | `note` | TEXT | |
 | `creato_il` | DATETIME | NOT NULL, DEFAULT CURRENT_TIMESTAMP |
 | `aggiornato_il` | DATETIME | NOT NULL, ON UPDATE CURRENT_TIMESTAMP |
+
+**Il raccolto appartiene all'apiario; l'alveare è un dettaglio facoltativo.**
+Molti apicoltori amatoriali smielano tutto insieme e pesano il totale; chi
+invece tiene separati i melari può indicare anche l'arnia.
+
+C'è un secondo motivo, più tecnico: è **il modo in cui è costruito il dataset
+USDA**. Lì `yieldpercol` non è misurato, è calcolato come produzione totale
+diviso numero di colonie. Registrando il totale dell'apiario e dividendo per gli
+alveari attivi, il dato dell'utente e quello di riferimento nascono allo stesso
+modo — e restano confrontabili.
+
+**Un limite che il database non può coprire.** Con entrambe le colonne
+valorizzate, niente impedisce di indicare un alveare che appartiene a un altro
+apiario: un `CHECK` non può leggere altre tabelle. La verifica è **applicativa**
+e vive in M3, insieme alle altre regole di dominio. Un trigger farebbe lo stesso
+lavoro, ma è codice che vive nel database, non compare in nessuna revisione di
+pull request e che nessuno ricorda di avere finché non lo maledice.
 
 ### Tabelle di riferimento
 
@@ -326,7 +344,8 @@ allinearle a mano.
 | `utenti` | `apiari` | 1 : N | CASCADE | RESTRICT |
 | `apiari` | `alveari` | 1 : N | CASCADE | RESTRICT |
 | `alveari` | `ispezioni` | 1 : N | CASCADE | RESTRICT |
-| `alveari` | `raccolti` | 1 : N | CASCADE | RESTRICT |
+| `apiari` | `raccolti` | 1 : N | CASCADE | RESTRICT |
+| `alveari` | `raccolti` | 0..1 : N | SET NULL | RESTRICT |
 | `utenti` | `previsioni` | 1 : N | CASCADE | RESTRICT |
 | `alveari` | `previsioni` | 0..1 : N | SET NULL | RESTRICT |
 | `modelli` | `previsioni` | 1 : N | RESTRICT | **CASCADE** |
@@ -377,7 +396,7 @@ su colonne non vincolate.
 ```sql
 CREATE INDEX idx_apiari_utente_attivo   ON apiari    (utente_id, attivo);
 CREATE INDEX idx_ispezioni_alveare_data ON ispezioni (alveare_id, data_ispezione DESC);
-CREATE INDEX idx_raccolti_alveare_data  ON raccolti  (alveare_id, data_raccolto DESC);
+CREATE INDEX idx_raccolti_apiario_data  ON raccolti  (apiario_id, data_raccolto DESC);
 CREATE INDEX idx_previsioni_utente_data ON previsioni (utente_id, creato_il DESC);
 CREATE INDEX idx_produzione_usda_anno   ON produzione_usda (anno);
 CREATE INDEX idx_messaggi_conversazione_data
@@ -428,8 +447,7 @@ SELECT
 
     (SELECT COALESCE(SUM(r.quantita_kg), 0)
        FROM raccolti r
-       JOIN alveari  al ON al.id = r.alveare_id
-       JOIN apiari   ap ON ap.id = al.apiario_id
+       JOIN apiari   ap ON ap.id = r.apiario_id
       WHERE ap.utente_id = :utente
         AND YEAR(r.data_raccolto) = YEAR(CURDATE()))              AS produzione_stagione_kg;
 ```
@@ -492,13 +510,15 @@ ORDER BY data_ispezione;
 SELECT YEAR(r.data_raccolto) AS anno, tm.etichetta AS tipo,
        SUM(r.quantita_kg) AS totale_kg
 FROM raccolti r
-JOIN alveari    al ON al.id = r.alveare_id
-JOIN apiari     ap ON ap.id = al.apiario_id
+JOIN apiari     ap ON ap.id = r.apiario_id
 JOIN tipi_miele tm ON tm.id = r.tipo_miele_id
 WHERE ap.utente_id = :utente
 GROUP BY anno, tm.etichetta
 ORDER BY anno DESC;
 ```
+
+Un join in meno rispetto alla versione precedente: il raccolto conosce già il
+proprio apiario e non deve passare dagli alveari.
 
 ### Q6 · Ispezioni a rischio alto
 *Serve a: pagina Ispezioni, filtro sul rischio.*
@@ -779,8 +799,8 @@ Punti su cui vale la pena fermarsi un momento prima di firmare:
    annota sempre e che qui non ha una colonna?
 2. Serve un'entità **trattamento** (antivarroa, nutrizione) separata dalle
    ispezioni, o basta il campo note?
-3. I raccolti sono per alveare o per apiario? Qui sono per alveare, il che
-   presuppone che si smieli tenendo separati i melari.
+3. ~~I raccolti sono per alveare o per apiario?~~ **Risolta**: per apiario, con
+   l'alveare come dettaglio facoltativo (vedi la tabella `raccolti`).
 
 Sono domande di dominio, non di progettazione: la risposta va chiesta a chi le
 api le tiene davvero.

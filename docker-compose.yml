@@ -1,0 +1,70 @@
+# =========================================================================== #
+# BeeWatch AI - servizi di sviluppo
+# =========================================================================== #
+#
+#   docker compose up -d          avvia MySQL in secondo piano
+#   docker compose logs -f mysql  guarda cosa sta facendo
+#   docker compose down           ferma tutto, i dati restano
+#   docker compose down -v        ferma tutto e CANCELLA i dati
+#
+# Al primo avvio - cioe' quando il volume e' vuoto - MySQL esegue da solo tutti
+# gli .sql che trova in /docker-entrypoint-initdb.d, in ordine alfabetico:
+# prima `schema.sql`, poi `seed.sql`. Non serve nessun comando manuale.
+#
+# Quegli script NON vengono rieseguiti agli avvii successivi. Per ripartire da
+# un database pulito:
+#
+#   docker compose down -v && docker compose up -d
+#
+# Le credenziali arrivano da `.env`, lo stesso file che legge l'applicazione:
+# una sola fonte di verita' (M1-T3).
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: beewatch-mysql
+    restart: unless-stopped
+
+    environment:
+      # Serve solo al contenitore per creare il database e l'utente.
+      # L'applicazione non usa mai l'utente root.
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?serve DB_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: ${DB_NAME:?serve DB_NAME in .env}
+      MYSQL_USER: ${DB_USER:?serve DB_USER in .env}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?serve DB_PASSWORD in .env}
+      TZ: Europe/Rome
+
+    # La porta interna resta 3306; quella esposta arriva da .env, cosi' chi ha
+    # gia' un MySQL sulla 3306 puo' cambiarla senza toccare questo file.
+    #
+    # `127.0.0.1:` davanti non e' un dettaglio: senza, Docker pubblica la porta
+    # su tutte le interfacce di rete e il database diventa raggiungibile da
+    # chiunque sia sulla stessa rete - il wifi dell'universita', per dire.
+    # Cosi' invece risponde solo a chi sta su questo computer.
+    ports:
+      - "127.0.0.1:${DB_PORT:-3306}:3306"
+
+    volumes:
+      - dati_mysql:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d:ro
+
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+
+    # Serve a `docker compose up --wait` e a chi in futuro dipendera' da questo
+    # servizio: senza, il contenitore risulta avviato prima che MySQL accetti
+    # connessioni, e il primo tentativo fallisce.
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  # Volume con nome, non una cartella del progetto: i file di MySQL restano
+  # gestiti da Docker, non finiscono per sbaglio in git e non danno problemi di
+  # permessi fra Windows e il contenitore Linux.
+  dati_mysql:
+    name: beewatch_dati_mysql
