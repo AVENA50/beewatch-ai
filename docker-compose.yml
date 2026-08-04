@@ -62,6 +62,47 @@ services:
       retries: 10
       start_period: 30s
 
+  # --------------------------------------------------------------------------- #
+  # L'applicazione Streamlit
+  # --------------------------------------------------------------------------- #
+  # Non parte con `docker compose up -d`: e' dietro il profilo `app`. Durante lo
+  # sviluppo Streamlit si fa girare sul computer, dove si ricarica a ogni
+  # salvataggio, e nel contenitore resta solo il database. Costruire l'immagine
+  # a ogni avvio sarebbe tempo perso.
+  #
+  #     docker compose --profile app up -d --build
+  #
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: beewatch-ai:dev
+    container_name: beewatch-app
+    restart: unless-stopped
+    profiles: ["app"]
+
+    environment:
+      # Dentro la rete di Docker il database non e' su localhost: si raggiunge
+      # con il nome del servizio. E' l'unica variabile che va sovrascritta.
+      DB_HOST: mysql
+      TZ: Europe/Rome
+
+    # Tutto il resto arriva dallo stesso .env che legge l'applicazione quando
+    # gira sul computer: una sola fonte di verita' (M1-T3).
+    env_file:
+      - .env
+
+    ports:
+      - "127.0.0.1:8501:8501"
+
+    # `service_healthy` e non `service_started`: senza, l'applicazione partirebbe
+    # mentre MySQL sta ancora inizializzando i propri file, e il primo tentativo
+    # di connessione fallirebbe. E' il motivo per cui l'healthcheck del database
+    # esiste.
+    depends_on:
+      mysql:
+        condition: service_healthy
+
 volumes:
   # Volume con nome, non una cartella del progetto: i file di MySQL restano
   # gestiti da Docker, non finiscono per sbaglio in git e non danno problemi di

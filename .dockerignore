@@ -17,8 +17,23 @@ notebooks
 tests
 docs
 data
+sql
+scripts
+models
+logs
 
 .env
+.env.example
 .dockerignore
 Dockerfile
 docker-compose.yml
+LICENSE
+CONTRIBUTING.md
+requirements-dev.txt
+
+# Nota: `sql/` non entra nell'immagine dell'applicazione. Lo schema e il seed
+# li esegue il contenitore di MySQL, che li riceve da un volume montato in
+# docker-compose.yml, non dall'immagine dell'app.
+#
+# `.env` non entra mai: le credenziali arrivano a runtime tramite env_file.
+# Un'immagine con dentro un .env e' un'immagine che non si puo' distribuire.

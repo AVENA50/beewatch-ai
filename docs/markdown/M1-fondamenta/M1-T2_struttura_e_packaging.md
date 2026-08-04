@@ -105,7 +105,8 @@ deducendolo dalla documentazione.
 | File | Contenuto |
 |---|---|
 | `pyproject.toml` | packaging, dipendenze, ruff, pytest, coverage |
-| `requirements.txt` | dipendenze bloccate, per chi non usa il packaging |
+| `requirements.txt` | sole dipendenze di esecuzione — è ciò che entra nell'immagine Docker |
+| `requirements-dev.txt` | strumenti di sviluppo: test, lint, notebook |
 | `.gitignore` | sezione BeeWatch in coda a quella standard |
 | `.dockerignore` | cosa non entra nell'immagine (M7) |
 | `README.md` | descrizione del progetto |

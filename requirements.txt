@@ -1,3 +1,16 @@
+# Dipendenze per FAR GIRARE l'applicazione.
+#
+# Questo file e' quello che entra nell'immagine Docker: deve contenere il
+# necessario e nient'altro. Gli strumenti di sviluppo stanno in
+# `requirements-dev.txt`, e un'immagine di consegna non deve contenerli.
+#
+# La fonte di verita' resta `pyproject.toml`: qui c'e' lo stesso elenco in un
+# formato che pip legge senza dover costruire il pacchetto, il che permette a
+# Docker di riusare il livello gia' costruito finche' le dipendenze non cambiano.
+#
+#     pip install -r requirements.txt          solo per far girare
+#     pip install -e ".[dev]"                  per sviluppare (consigliato)
+
 # --- core ---
 streamlit>=1.40
 pandas>=2.2
@@ -10,8 +23,3 @@ requests>=2.32
 
 # --- grafici ---
 plotly>=5.24
-
-# --- sviluppo e test ---
-pytest>=8.3
-pytest-cov>=5.0
-ruff>=0.6
