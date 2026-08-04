@@ -33,10 +33,6 @@ dev = [
     "jupyterlab>=4.2",
     "ipykernel>=6.29",
     "matplotlib>=3.9",
-    # Documentazione: scripts/genera_docx.py produce i Word da consegnare a
-    # partire dai Markdown di docs/. Serve solo a chi scrive la documentazione,
-    # non all'applicazione.
-    "python-docx>=1.1",
 ]
 
 # Il package applicativo e' beewatch/. La cartella app/ contiene solo

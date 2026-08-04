@@ -237,10 +237,6 @@ data/*
 build/
 dist/
 
-# Documenti Word: sono generati da scripts/genera_docx.py a partire dai .md.
-# Sono binari, git non ne mostrerebbe le differenze, e si rigenerano a comando.
-docs/_word/
-
 # Log applicativi
 logs/
 *.log

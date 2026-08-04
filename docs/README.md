@@ -41,7 +41,7 @@ Non appartengono a una singola task: crescono con il progetto.
 
 ## Come è organizzata la cartella
 
-Tre cartelle, tre ruoli distinti: **i testi**, **gli allegati**, **i prodotti**.
+Tre cartelle, tre ruoli distinti: **i testi**, **i diagrammi**, **le immagini**.
 
 ```
 docs/
@@ -58,55 +58,54 @@ docs/
 │   ├── M8-consegna/
 │   └── MX-estensioni/
 │
-├── risorse/                   GLI ALLEGATI — immagini, diagrammi, schemi
-│   ├── er_beewatch.png
-│   └── schema.dbml
+├── diagrams/                  I DIAGRAMMI — sorgente ed esportazione insieme
+│   ├── README.md              come si modificano
+│   ├── er_diagram.dbml        schema del database        → dbdiagram.io
+│   ├── er_diagram.png
+│   ├── architecture.drawio    architettura (M3-T1)       → draw.io
+│   └── workflow.drawio        flusso dei dati (M3-T4)    → draw.io
 │
-└── _word/                     I PRODOTTI — generati, ignorati da git
-    ├── M1-fondamenta/         stessa struttura di markdown/
-    └── ...
+└── images/                    LE IMMAGINI — screenshot e grafici
 ```
-
-`markdown/` e `_word/` hanno **la stessa struttura di cartelle**: a ogni
-`markdown/M2-dati/dati.md` corrisponde un `_word/M2-dati/dati.docx`. Il nome del
-file non cambia mai, solo l'estensione.
 
 `README.md` resta fuori da `markdown/` perché GitHub lo mostra automaticamente
 quando si apre la cartella `docs/`: spostarlo significherebbe perdere l'indice
 in bella vista.
 
-**`risorse/`** tiene separati i documenti dagli allegati. Oggi contiene il
-diagramma ER (`er_beewatch.png`) e la sua sorgente (`schema.dbml`); ci
-finiranno gli screenshot dell'interfaccia e i grafici del modello.
+### Perché `diagrams/` e `images/` sono separate
 
-## I due formati
+Un diagramma ha un **sorgente modificabile** — un `.dbml`, un `.drawio` — e una
+sua esportazione. Le due cose stanno insieme e portano lo stesso nome: se un
+giorno una freccia va corretta, si apre il sorgente e si riesporta.
 
-La documentazione si scrive in **Markdown**, ed è l'unica fonte di verità: si
-legge direttamente su GitHub, git ne mostra le differenze riga per riga e due
-persone possono modificarla senza conflitti insanabili.
+Un `.png` senza sorgente è un vicolo cieco: il primo che deve cambiare qualcosa
+ridisegna tutto da capo. È il motivo per cui i sorgenti vanno versionati, ed è
+il motivo per cui hanno una cartella dedicata.
 
-I **Word** servono per la consegna e per la stampa. Sono un **prodotto
-generato**, non stanno in git e non si modificano a mano:
+`images/` raccoglie invece ciò che un sorgente non ce l'ha: screenshot
+dell'interfaccia, grafici prodotti dal notebook. Si rifanno eseguendo il
+programma, non modificando un file.
 
-```
-python scripts/genera_docx.py                               # tutti i documenti
-python scripts/genera_docx.py docs/markdown/M2-dati/dati.md # uno solo
-python scripts/genera_docx.py --verifica                    # sono allineati?
-```
+Le regole di dettaglio sono in [`diagrams/README.md`](diagrams/README.md).
 
-**Perché non stanno in git.** Un `.docx` è un file binario: in una pull request
-comparirebbe come *«binary file not shown»*, nessuno potrebbe vedere cosa è
-cambiato, e due persone che ne modificano uno insieme non avrebbero modo di
-unire le versioni. Siccome sono comunque rigenerabili dal `.md` in due secondi,
-tenerli sotto controllo di versione aggiunge peso e zero informazione.
+## Un solo formato
+
+La documentazione si scrive in **Markdown**, e basta. Si legge direttamente su
+GitHub, git ne mostra le differenze riga per riga e due persone possono
+modificarla senza conflitti insanabili.
+
+Niente Word, niente PDF nel repository. Se per la consegna servisse un formato
+diverso, si converte al momento: da Markdown a PDF o DOCX è un passaggio
+meccanico, mentre tenere allineate due versioni dello stesso documento non
+funziona mai.
 
 ## Convenzioni di scrittura
 
 - **Nome del file**: `<codice-task>_<argomento>.md` per i documenti legati a una
   singola task, nome parlante per quelli di riferimento che crescono nel tempo.
-- **Prima riga**: un titolo di livello 1 (`# ...`). Diventa il titolo del Word.
+- **Prima riga**: un titolo di livello 1 (`# ...`) con il codice della task.
 - **Subito dopo**: una citazione (`> ...`) con milestone, stato, commit e
-  rimandi. Diventa il riquadro in cima al documento.
+  rimandi ai documenti collegati.
 - **Sezioni**: livello 2 (`## ...`).
 - Ogni decisione progettuale va scritta **con la sua motivazione**. Una
   decisione senza motivo, fra tre settimane, è indistinguibile da un caso.
