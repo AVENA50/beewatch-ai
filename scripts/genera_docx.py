@@ -351,6 +351,29 @@ def aggiungi_codice(documento: Document, righe: list[str]) -> None:
     documento.add_paragraph().paragraph_format.space_after = Pt(6)
 
 
+def aggiungi_immagine(documento: Document, percorso: Path, didascalia: str) -> None:
+    """Inserisce un'immagine a piena larghezza, con la sua didascalia sotto."""
+    if not percorso.exists():
+        print(f"  ! immagine non trovata: {percorso}", file=sys.stderr)
+        return
+
+    paragrafo = documento.add_paragraph()
+    paragrafo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    paragrafo.paragraph_format.space_before = Pt(8)
+    paragrafo.paragraph_format.space_after = Pt(2)
+    paragrafo.add_run().add_picture(str(percorso), width=Cm(LARGHEZZA_UTILE_CM))
+
+    if didascalia:
+        sotto = documento.add_paragraph()
+        sotto.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        sotto.paragraph_format.space_after = Pt(12)
+        run = sotto.add_run(didascalia)
+        run.italic = True
+        run.font.size = Pt(9)
+        run.font.name = FONT_TESTO
+        run.font.color.rgb = GRIGIO
+
+
 def converti(percorso_md: Path, percorso_docx: Path) -> None:
     """Legge un Markdown e scrive il Word corrispondente."""
     righe = percorso_md.read_text(encoding="utf-8").splitlines()
@@ -421,6 +444,13 @@ def converti(percorso_md: Path, percorso_docx: Path) -> None:
             paragrafo.paragraph_format.space_before = Pt(6)
             paragrafo.paragraph_format.space_after = Pt(10)
             _bordo(paragrafo, "bottom", BORDO)
+            indice += 1
+            continue
+
+        immagine = re.fullmatch(r"!\[([^\]]*)\]\(([^)]+)\)", nuda)
+        if immagine:
+            chiudi_paragrafo()
+            aggiungi_immagine(documento, percorso_md.parent / immagine.group(2), immagine.group(1))
             indice += 1
             continue
 
