@@ -54,7 +54,7 @@ Le dipendenze sono divise in due gruppi:
 | Gruppo | Contenuto | Chi lo installa |
 |---|---|---|
 | principale | streamlit, pandas, scikit-learn, mysql-connector, python-dotenv, plotly… | chi usa l'applicazione |
-| `dev` | pytest, pytest-cov, ruff, jupyterlab, matplotlib, python-docx | chi la sviluppa |
+| `dev` | pytest, pytest-cov, ruff, jupyterlab, matplotlib | chi la sviluppa |
 
 Chi vuole solo far girare l'app non si tira dietro Jupyter.
 

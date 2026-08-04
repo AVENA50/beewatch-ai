@@ -74,7 +74,7 @@ beewatch-ai/
 ├── app/           interfaccia Streamlit — nessuna logica applicativa
 ├── beewatch/      il pacchetto: configurazione, database, ML, AI
 ├── data/          dataset locali (ignorata da git)
-├── docs/          documentazione: markdown/, risorse/, _word/
+├── docs/          documentazione: markdown/, diagrams/, images/
 ├── models/        modelli addestrati (.joblib)
 ├── notebooks/     analisi esplorative
 ├── scripts/       utilità eseguibili
@@ -92,8 +92,6 @@ avviare l'interfaccia.
 pytest                      # i test
 ruff check .                # lint e ordine degli import
 ruff check . --fix          # correzione automatica di ciò che è correggibile
-
-python scripts/genera_docx.py   # rigenera i Word della documentazione
 ```
 
 Ogni pull request esegue automaticamente lint e test su una macchina pulita:
