@@ -137,7 +137,8 @@ Table ispezioni [headercolor: #E9A825] {
 
 Table raccolti [headercolor: #E9A825] {
   id            int              [pk, increment]
-  alveare_id    int              [not null]
+  apiario_id    int              [not null]
+  alveare_id    int              [note: 'Facoltativo: solo se si smiela tenendo separati i melari']
   tipo_miele_id tinyint          [not null]
   data_raccolto date             [not null]
   quantita_kg   decimal(6,2)     [not null, note: 'CHECK > 0']
@@ -146,8 +147,22 @@ Table raccolti [headercolor: #E9A825] {
   aggiornato_il datetime         [not null, default: `CURRENT_TIMESTAMP`, note: 'ON UPDATE CURRENT_TIMESTAMP']
 
   indexes {
-    (alveare_id, data_raccolto) [name: 'idx_raccolti_alveare_data']
+    (apiario_id, data_raccolto) [name: 'idx_raccolti_apiario_data']
   }
+  Note: '''
+    Il raccolto appartiene all'apiario; l'alveare e' un dettaglio facoltativo.
+    Molti apicoltori amatoriali smielano tutto insieme e pesano il totale: chi
+    invece tiene separati i melari puo' indicare anche l'arnia.
+
+    E' anche il modo in cui e' costruito il dataset USDA, dove la resa per
+    colonia non e' misurata ma calcolata come produzione totale diviso numero
+    di colonie: il nostro dato e quello di riferimento nascono cosi' allo
+    stesso modo e restano confrontabili.
+
+    Il database non puo' garantire che l'alveare indicato appartenga a
+    quell'apiario: un CHECK non legge altre tabelle. La verifica e'
+    applicativa, in M3.
+  '''
 }
 
 // --------------------------------------------------------------------------- //
@@ -354,7 +369,8 @@ Table messaggi [headercolor: #8B72C8] {
 Ref: apiari.utente_id > utenti.id [delete: cascade, update: restrict]
 Ref: alveari.apiario_id > apiari.id [delete: cascade, update: restrict]
 Ref: ispezioni.alveare_id > alveari.id [delete: cascade, update: restrict]
-Ref: raccolti.alveare_id > alveari.id [delete: cascade, update: restrict]
+Ref: raccolti.apiario_id > apiari.id [delete: cascade, update: restrict]
+Ref: raccolti.alveare_id > alveari.id [delete: set null, update: restrict]
 
 Ref: alveari.stato_alveare_id > stati_alveare.id [delete: restrict, update: restrict]
 Ref: ispezioni.livello_rischio_id > livelli_rischio.id [delete: restrict, update: restrict]
