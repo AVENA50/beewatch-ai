@@ -37,7 +37,7 @@ funziona sempre, perché lì tutto è già installato.
 | `tests/test_logging_config.py` | creato — 8 casi |
 | `.github/workflows/ci.yml` | creato |
 | `beewatch/logging_config.py` | modificato — guardia di idempotenza resa esplicita |
-| `docs/M1-fondamenta/M1-T5_test_ci.md` | creato |
+| `docs/markdown/M1-fondamenta/M1-T5_test_ci.md` | creato |
 
 Nessuna nuova dipendenza: `pytest`, `pytest-cov` e `ruff` erano già in
 `pyproject.toml` sotto `[project.optional-dependencies] dev`.

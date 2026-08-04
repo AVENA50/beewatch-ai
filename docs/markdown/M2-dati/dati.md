@@ -578,7 +578,7 @@ pannello bilanciato.
 > Un modello di machine learning che non scende **sotto 4,25 kg di MAE** su una
 > divisione temporale non serve a niente: due medie e una retta fanno lo stesso.
 
-Questo numero va in `docs/M4-machine-learning/` come criterio di accettazione, e
+Questo numero va in `docs/markdown/M4-machine-learning/` come criterio di accettazione, e
 va detto in sede di presentazione. Un progetto che dichiara la propria soglia di
 riferimento è molto più credibile di uno che mostra un R² senza contesto.
 

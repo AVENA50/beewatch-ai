@@ -11,11 +11,18 @@ Tenere allineate a mano due versioni dello stesso documento non funziona: prima
 o poi divergono. Qui il `.md` e' l'unica fonte di verita' e il `.docx` e' un
 prodotto, rigenerabile in qualsiasi momento.
 
+Per la stessa ragione i Word **non stanno in git**: finiscono in `docs/_word/`,
+che e' ignorata. Sono file binari, git non ne mostra le differenze e in una pull
+request comparirebbero come "binary file not shown". Si rigenerano con un
+comando quando servono per la consegna.
+
 Uso
 ---
-    python scripts/genera_docx.py            # tutti i documenti di docs/
-    python scripts/genera_docx.py docs/M2-dati/dati.md
+    python scripts/genera_docx.py             # tutti i documenti
+    python scripts/genera_docx.py docs/markdown/M2-dati/dati.md
     python scripts/genera_docx.py --verifica  # controlla se i .docx sono aggiornati
+
+    docs/markdown/<milestone>/<documento>.md   ->   docs/_word/<milestone>/<documento>.docx
 
 Il Markdown riconosciuto e' quello effettivamente usato nel progetto: titoli,
 paragrafi, elenchi puntati e numerati, tabelle, blocchi di codice, citazioni,
@@ -41,6 +48,15 @@ from docx.shared import Cm, Pt, RGBColor
 
 RADICE = Path(__file__).resolve().parent.parent
 CARTELLA_DOCS = RADICE / "docs"
+
+# I sorgenti in Markdown, organizzati per milestone.
+CARTELLA_SORGENTI = CARTELLA_DOCS / "markdown"
+
+# I Word finiscono qui, con la stessa struttura di cartelle e fuori dal
+# controllo di versione (vedi .gitignore). Sono un prodotto: si rigenerano
+# quando servono, non si conservano in git dove occuperebbero spazio senza che
+# nessuno possa leggerne le differenze.
+CARTELLA_WORD = CARTELLA_DOCS / "_word"
 
 # --------------------------------------------------------------------------- #
 # Identita' visiva
@@ -535,7 +551,13 @@ def _normalizza_archivio(percorso: Path) -> None:
 def elenca_markdown(percorsi: list[str]) -> list[Path]:
     if percorsi:
         return [Path(p).resolve() for p in percorsi]
-    return sorted(p for p in CARTELLA_DOCS.rglob("*.md") if p.name != "README.md")
+    return sorted(p for p in CARTELLA_SORGENTI.rglob("*.md") if p.name != "README.md")
+
+
+def destinazione(percorso_md: Path) -> Path:
+    """Dove finisce il Word: `docs/_word/`, con la struttura di `docs/markdown/`."""
+    relativo = percorso_md.resolve().relative_to(CARTELLA_SORGENTI)
+    return (CARTELLA_WORD / relativo).with_suffix(".docx")
 
 
 def main() -> int:
@@ -555,7 +577,7 @@ def main() -> int:
 
     obsoleti = []
     for percorso_md in documenti:
-        percorso_docx = percorso_md.with_suffix(".docx")
+        percorso_docx = destinazione(percorso_md)
         relativo = percorso_md.relative_to(RADICE)
 
         if argomenti.verifica:
@@ -566,7 +588,7 @@ def main() -> int:
             continue
 
         converti(percorso_md, percorso_docx)
-        print(f"  {relativo}  ->  {percorso_docx.name}")
+        print(f"  {relativo}  ->  {percorso_docx.relative_to(RADICE)}")
 
     if argomenti.verifica:
         if obsoleti:

@@ -6,7 +6,7 @@
 //
 //   1. apri https://dbdiagram.io/d
 //   2. incolla tutto il contenuto di questo file nel pannello di sinistra
-//   3. Export -> PNG   ->  salva come docs/M2-dati/er_beewatch.png
+//   3. Export -> PNG   ->  salva come docs/risorse/er_beewatch.png
 //
 // Da dbdiagram si puo' anche esportare il DDL MySQL (Export -> MySQL): sara' il
 // punto di partenza di sql/schema.sql in M2-T5. Va comunque riletto a mano:

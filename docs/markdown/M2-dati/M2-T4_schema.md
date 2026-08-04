@@ -2,8 +2,8 @@
 
 > **Task M2-T4** · Schema relazionale, diagramma ER e verifica sugli use case
 > **Versione 3** — dopo la revisione tecnica documentata in fondo
-> **Sorgente del diagramma:** `schema.dbml`, da incollare su [dbdiagram.io](https://dbdiagram.io/d)
-> **Diagramma:** `er_beewatch.png`, esportato da dbdiagram
+> **Sorgente del diagramma:** [`../risorse/schema.dbml`](../../risorse/schema.dbml), da incollare su [dbdiagram.io](https://dbdiagram.io/d)
+> **Diagramma:** `../risorse/er_beewatch.png`, esportato da dbdiagram
 > **Traduzione in SQL:** `sql/schema.sql`, task **M2-T5**
 > **Dipende da:** M2-T2 (dizionario e regole di pulizia), M2-T3 (target e limiti)
 
@@ -34,19 +34,19 @@ distruggere il dataset di riferimento.
 
 ## Il diagramma
 
-![Diagramma ER di BeeWatch AI](er_beewatch.png)
+![Diagramma ER di BeeWatch AI](../../risorse/er_beewatch.png)
 
 Le tabelle sono colorate per livello: ambra l'operativo, grigio il riferimento,
 blu l'USDA, verde il modello, viola la tracciabilità.
 
 ### Come si modifica
 
-Il diagramma **non si disegna a mano**: si modifica `schema.dbml`, che sta in
-questa stessa cartella, e si riesporta.
+Il diagramma **non si disegna a mano**: si modifica `docs/risorse/schema.dbml` e si
+riesporta.
 
 1. apri [dbdiagram.io/d](https://dbdiagram.io/d)
-2. incolla il contenuto di `schema.dbml` nel pannello di sinistra
-3. *Export → PNG*, e sovrascrivi `er_beewatch.png`
+2. incolla il contenuto di `docs/risorse/schema.dbml` nel pannello di sinistra
+3. *Export → PNG*, e sovrascrivi `docs/risorse/er_beewatch.png`
 
 Da lì si può anche fare *Export → MySQL* e ottenere il DDL. **Non è ancora
 `sql/schema.sql`**: DBML descrive modelli, non conosce `UNSIGNED`, i `CHECK`,

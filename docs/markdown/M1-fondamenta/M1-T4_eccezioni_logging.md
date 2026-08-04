@@ -48,7 +48,7 @@ loro logger con `ottieni_logger(__name__)` e scrivono.
 | `beewatch/logging_config.py` | creato |
 | `beewatch/config.py` | modificato — `ConfigError` rimossa e importata da `exceptions.py` |
 | `.gitignore` | modificato — aggiunta la riga `logs/` |
-| `docs/M1-fondamenta/M1-T4_eccezioni_logging.md` | creato |
+| `docs/markdown/M1-fondamenta/M1-T4_eccezioni_logging.md` | creato |
 
 Nessuna nuova dipendenza: `logging` fa parte della libreria standard.
 
